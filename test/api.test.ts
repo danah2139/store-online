@@ -6,15 +6,22 @@ import app from "../server";
 //POST
 
 describe("POST /store", () => {
-    it("POST /store should return 200 OK", () => {
-        return request(app).post("/store").send({ "username": "admin", "item_id": "387", "price": 3.14 })
-            .expect(200);
+    it("POST /store should return 200 OK", async () => {
+        const res = await request(app).post("/store").send({ "username": "admin", "item_id": "387", "price": 3.14 })
+        expect(res.body).toEqual({ message:`item stored 387`});
     });
 });
 
 describe("POST /store", () => {
     it("POST /store should return 200 OK", () => {
         return request(app).post("/store").send({ "username": "admin", "item_id": "567", "price": 2 })
+            .expect(200);
+    });
+});
+
+describe("POST /store", () => {
+    it("POST /store should return 200 OK", () => {
+        return request(app).post("/store").send({ "username": "admin", "item_id": "123", "price": 2 })
             .expect(200);
     });
 });
@@ -44,7 +51,7 @@ describe("PUT /store", () => {
 
 describe("PUT /store", () => {
     it("PUT /store should return 200 OK", () => {
-        return request(app).put("/store").send({ "username": "admin", "item_id": "387", "add": 10 })
+        return request(app).put("/store").send({ "username": "admin", "item_id": "123", "add": 10 })
             .expect(200);
     });
 });
@@ -96,6 +103,13 @@ describe("POST /clients", () => {
     });
 });
 
+describe("POST /clients", () => {
+    it("POST /clients should return 200 OK", () => {
+        return request(app).post("/clients").send({ "username": "dana", "item_id": "123", "quantity": 3 })
+            .expect(200);
+    });
+});
+
 describe("POST /clients with non exist item", () => {
     it("POST /clients should return 400 Bad Request", () => {
         return request(app).post("/clients").send({ "username": "mike", "item_id": "789", "quantity": 2 })
@@ -132,9 +146,4 @@ describe("DELETE /clients", () => {
             .expect(200);
     });
 });
-
-
-
-
-
 

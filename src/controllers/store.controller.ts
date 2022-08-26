@@ -2,6 +2,8 @@ import express from "express";
 import db from "../models/index";
 import Item from "../models/item.model";
 import InventoryItem from "../models/inventoryItem.model";
+const Mutex = require("async-mutex").Mutex;
+const mutex = new Mutex();
 
 interface itemPayloadType {
   item_id: string;
@@ -31,6 +33,7 @@ const setItemDetails = async (req: express.Request, res: express.Response) => {
   const itemsIndex = db.items.findIndex((item) => item.itemID === itemID);
 
   if (itemsIndex === -1) {
+    // add new item
     const item: Item = new Item(itemID, price);
     db.items.push(item);
     const inventoryItem: InventoryItem = new InventoryItem(itemID, 0);
@@ -62,8 +65,7 @@ const updateItemInventory = async (
   if (
     typeof userName !== "string" ||
     typeof itemID !== "string" ||
-    (typeof amount !== "number" &&
-    typeof add !== "number")
+    (typeof amount !== "number" && typeof add !== "number")
   ) {
     return res.status(400).send({ message: "invalid fields types" });
   }
@@ -76,12 +78,14 @@ const updateItemInventory = async (
   const inventoryItemIndex: number = db.inventoriesItems.findIndex(
     (inventoryItem) => inventoryItem.itemID === itemID
   );
-  if (add) {
-    db.inventoriesItems[inventoryItemIndex]["inventory"] += add;
-  }
-  if (amount) {
-    db.inventoriesItems[inventoryItemIndex]["inventory"] = amount;
-  }
+  await mutex.runExclusive(async () => {
+    if (add) {
+      db.inventoriesItems[inventoryItemIndex]["inventory"] += add;
+    }
+    if (amount) {
+      db.inventoriesItems[inventoryItemIndex]["inventory"] = amount;
+    }
+  });
   return res.send({
     item_id: itemID,
     inventory: db.inventoriesItems[inventoryItemIndex]["inventory"],
@@ -102,7 +106,6 @@ const getInventory = async (req: express.Request, res: express.Response) => {
   if (typeof userName !== "string" && !Array.isArray(items)) {
     return res.status(400).send({ message: "invalid fields types" });
   }
-
 
   if (!items) {
     return res.send({ items: db.inventoriesItems });

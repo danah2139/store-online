@@ -1,7 +1,8 @@
 import express from "express";
-const Mutex = require("async-mutex").Mutex;
 import db from "../models/index";
 import Cart from "../models/cart.model";
+const Mutex = require("async-mutex").Mutex;
+const mutex = new Mutex();
 
 exports.addItemToCart = async (req: express.Request, res: express.Response) => {
   const userName: string = req.body.username;
@@ -57,7 +58,9 @@ exports.addItemToCart = async (req: express.Request, res: express.Response) => {
     (item) => item.itemID === itemID
   );
   if (cartItemIndex !== -1) {
-    db.carts[cartIndex].items[cartItemIndex].amount += quantity;
+    await mutex.runExclusive(async () => {
+      db.carts[cartIndex].items[cartItemIndex].amount += quantity;
+    })
   } else {
     db.carts[cartIndex].items.push({
       itemID,
@@ -98,23 +101,24 @@ exports.removeItemFromCart = async (
   const inventoryItemIndex: number = db.inventoriesItems.findIndex(
     (inventoryItem) => inventoryItem.itemID === itemID
   );
-  db.inventoriesItems[inventoryItemIndex]["inventory"] += amountOfItem;
-  //update total cost
-  const itemIndex: number = db.items.findIndex(
-    (item) => item.itemID === itemID
-  );
-  const price: number = db.items[itemIndex]["price"];
-  db.carts[cartIndex].totalCost -= price * amountOfItem;
-  db.carts[cartIndex].items = db.carts[cartIndex].items.filter(
-    (item) => item.itemID !== itemID
-  );
+  await mutex.runExclusive(async () => {
+    db.inventoriesItems[inventoryItemIndex]["inventory"] += amountOfItem;
+        //update total cost
+    const itemIndex: number = db.items.findIndex(
+      (item) => item.itemID === itemID
+    );
+    const price: number = db.items[itemIndex]["price"];
+    db.carts[cartIndex].totalCost -= price * amountOfItem;
+    db.carts[cartIndex].items = db.carts[cartIndex].items.filter(
+      (item) => item.itemID !== itemID
+    );
+  });
+
+
   return res.send(JSON.stringify(db.carts[cartIndex]));
 };
 
-exports.purchaseItemsInCart = async (
-  req: express.Request,
-  res: express.Response
-) => {
+exports.purchaseItemsInCart = async(req: express.Request, res: express.Response) => {
   const userName: string = req.body.username;
   if (!userName) {
     return res.status(400).send({ message: "please insert username" });
@@ -129,6 +133,8 @@ exports.purchaseItemsInCart = async (
     return res.status(400).send({ message: "user cart is not known" });
   }
   const cart: Cart = db.carts[cartIndex];
+  await mutex.runExclusive(async () => {
   db.carts = db.carts.filter((cart) => cart.userName !== userName);
+  });
   return res.send(JSON.stringify(cart));
 };
