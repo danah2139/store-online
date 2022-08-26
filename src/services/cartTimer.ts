@@ -12,7 +12,8 @@ class CartTimer {
           const diff: number = currentTime - itemTime;
 
           // if pass 10 min remove from cart
-          if (diff > 600000) {
+          //600000
+          if (diff > 4000) {
             // remove item from cart
             const inventoryItemIndex: number = db.inventoriesItems.findIndex(
               (inventoryItem) => inventoryItem.itemID === item.itemID
@@ -28,7 +29,7 @@ class CartTimer {
             db.carts[cartIndex].totalCost -= cost;
             db.inventoriesItems[inventoryItemIndex]["inventory"] += item.amount;
 
-            db.carts[cartIndex].items.filter(
+            db.carts[cartIndex].items = db.carts[cartIndex].items.filter(
               (item) => item.itemID !== item.itemID
             );
           }
