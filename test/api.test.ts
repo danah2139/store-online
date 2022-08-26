@@ -89,6 +89,13 @@ describe("POST /clients", () => {
     });
 });
 
+describe("POST /clients", () => {
+    it("POST /clients should return 200 OK", () => {
+        return request(app).post("/clients").send({ "username": "dana", "item_id": "387", "quantity": 1 })
+            .expect(200);
+    });
+});
+
 describe("POST /clients with non exist item", () => {
     it("POST /clients should return 400 Bad Request", () => {
         return request(app).post("/clients").send({ "username": "mike", "item_id": "789", "quantity": 2 })
@@ -118,6 +125,15 @@ describe("POST /clients/purchase", () => {
 
 
 //DELETE
+
+describe("DELETE /clients", () => {
+    it("`DELETE` /clients should return 200 OK", () => {
+        return request(app).delete("/clients").send({ "username": "dana", "item_id": "387" })
+            .expect(200);
+    });
+});
+
+
 
 
 
